@@ -1,30 +1,30 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import initSqlJs from 'sql.js';
-
-// Note: To use sql.js in a Create React App project:
-// 1. Run: npm install sql.js
-// 2. Download sql-wasm.wasm from https://sql.js.org/dist/sql-wasm.wasm and place it in your public/ folder.
-// 3. In your index.html or via webpack config, ensure the wasm is served correctly.
+import './App.css'; // Add this for styling
 
 function App() {
   const [data, setData] = useState([]);
   const [filteredData, setFilteredData] = useState([]);
   const [searchName, setSearchName] = useState('');
-  const [excludeTags, setExcludeTags] = useState('');
+  const [includeTags, setIncludeTags] = useState([]); // For tag search
+  const [excludeTags, setExcludeTags] = useState([]);
   const [sortField, setSortField] = useState('Date');
   const [sortDirection, setSortDirection] = useState('asc');
+  const [availableTags, setAvailableTags] = useState([]); // For tag dropdown
 
+  // Load database and extract unique tags
   const handleFileUpload = async (event) => {
     const file = event.target.files[0];
     if (!file) return;
 
-    const arrayBuffer = await file.arrayBuffer();
     try {
+      const arrayBuffer = await file.arrayBuffer();
       const SQL = await initSqlJs({
-        locateFile: (file) => `/sql-wasm.wasm`, // Adjust if your public path differs
+        locateFile: () => '/sql-wasm.wasm',
       });
       const db = new SQL.Database(new Uint8Array(arrayBuffer));
 
+      // Main query
       const query = `
         SELECT f.file_name as file,
                GROUP_CONCAT(t.tag) as tags,
@@ -38,129 +38,191 @@ function App() {
         HAVING tags NOT LIKE '%dead%'
         ORDER BY Date;
       `;
-
       const results = [];
       const stmt = db.prepare(query);
       while (stmt.step()) {
         results.push(stmt.getAsObject());
       }
       stmt.free();
+
+      // Get unique tags for dropdown
+      const tagsQuery = `SELECT DISTINCT tag FROM tags;`;
+      const tagsStmt = db.prepare(tagsQuery);
+      const tags = [];
+      while (tagsStmt.step()) {
+        tags.push(tagsStmt.getAsObject().tag);
+      }
+      tagsStmt.free();
       db.close();
 
       setData(results);
       setFilteredData(results);
+      setAvailableTags(tags.sort()); // Sort tags alphabetically
     } catch (error) {
-      console.error('Error loading database or executing query:', error);
+      console.error('Error details:', error);
       alert('Failed to load or query the database. Ensure the file is a valid SQLite DB with the correct schema.');
     }
   };
 
-  const applyFiltersAndSort = (name, excludes, field, direction) => {
+  // Filter and sort data
+  useEffect(() => {
     let filtered = [...data];
 
     // Search by name
-    if (name) {
+    if (searchName) {
       filtered = filtered.filter((item) =>
-        item.file.toLowerCase().includes(name.toLowerCase())
+        item.file.toLowerCase().includes(searchName.toLowerCase())
       );
     }
 
-    // Exclude tags (anti-search)
-    if (excludes) {
-      const excludeList = excludes.split(',').map((tag) => tag.trim().toLowerCase());
+    // Include tags (all must match)
+    if (includeTags.length > 0) {
       filtered = filtered.filter((item) => {
         const itemTags = item.tags.split(',').map((tag) => tag.trim().toLowerCase());
-        return !excludeList.some((exclude) => itemTags.includes(exclude));
+        return includeTags.every((tag) => itemTags.includes(tag.toLowerCase()));
+      });
+    }
+
+    // Exclude tags
+    if (excludeTags.length > 0) {
+      filtered = filtered.filter((item) => {
+        const itemTags = item.tags.split(',').map((tag) => tag.trim().toLowerCase());
+        return !excludeTags.some((tag) => itemTags.includes(tag.toLowerCase()));
       });
     }
 
     // Sorting
     filtered.sort((a, b) => {
-      let valA = a[field];
-      let valB = b[field];
+      let valA = a[sortField];
+      let valB = b[sortField];
 
-      if (field === 'tags') {
+      if (sortField === 'tags') {
         valA = a.tags || '';
         valB = b.tags || '';
-      } else if (field === 'Date') {
+      } else if (sortField === 'Date') {
         valA = new Date(a.Date || '1970-01-01');
         valB = new Date(b.Date || '1970-01-01');
+      } else if (sortField === 'chapters') {
+        valA = Number(a.chapters) || 0; // Convert to number
+        valB = Number(b.chapters) || 0;
+      } else if (sortField === 'Done') {
+        valA = a.Done === '✅' ? 1 : 0; // Treat ✅ as 1, ❌ as 0
+        valB = b.Done === '✅' ? 1 : 0;
       }
 
-      if (valA < valB) return direction === 'asc' ? -1 : 1;
-      if (valA > valB) return direction === 'asc' ? 1 : -1;
+      if (valA < valB) return sortDirection === 'asc' ? -1 : 1;
+      if (valA > valB) return sortDirection === 'asc' ? 1 : -1;
       return 0;
     });
 
     setFilteredData(filtered);
+  }, [data, searchName, includeTags, excludeTags, sortField, sortDirection]);
+
+  // Handle tag selection
+  const handleAddIncludeTag = (tag) => {
+    if (!includeTags.includes(tag)) {
+      setIncludeTags([...includeTags, tag]);
+    }
   };
 
-  const handleSearchChange = (e) => {
-    const value = e.target.value;
-    setSearchName(value);
-    applyFiltersAndSort(value, excludeTags, sortField, sortDirection);
+  const handleAddExcludeTag = (tag) => {
+    if (!excludeTags.includes(tag)) {
+      setExcludeTags([...excludeTags, tag]);
+    }
   };
 
-  const handleExcludeChange = (e) => {
-    const value = e.target.value;
-    setExcludeTags(value);
-    applyFiltersAndSort(searchName, value, sortField, sortDirection);
+  const handleRemoveIncludeTag = (tag) => {
+    setIncludeTags(includeTags.filter((t) => t !== tag));
+  };
+
+  const handleRemoveExcludeTag = (tag) => {
+    setExcludeTags(excludeTags.filter((t) => t !== tag));
   };
 
   const handleSort = (field) => {
     const newDirection = sortField === field && sortDirection === 'asc' ? 'desc' : 'asc';
     setSortField(field);
     setSortDirection(newDirection);
-    applyFiltersAndSort(searchName, excludeTags, field, newDirection);
   };
 
   return (
-    <div style={{ padding: '20px' }}>
+    <div className="app-container">
       <h1>Obsidian Tags Reader</h1>
-      <input type="file" onChange={handleFileUpload} accept=".db" />
-      <div style={{ marginTop: '20px' }}>
-        <label>Search by File Name: </label>
-        <input
-          type="text"
-          value={searchName}
-          onChange={handleSearchChange}
-          placeholder="Enter file name..."
-        />
+      <div className="file-upload">
+        <input type="file" onChange={handleFileUpload} accept=".db" />
       </div>
-      <div style={{ marginTop: '10px' }}>
-        <label>Exclude Tags (comma-separated): </label>
-        <input
-          type="text"
-          value={excludeTags}
-          onChange={handleExcludeChange}
-          placeholder="e.g., tag1,tag2"
-        />
+      <div className="filters">
+        <div className="filter-group">
+          <label>Search by File Name:</label>
+          <input
+            type="text"
+            value={searchName}
+            onChange={(e) => setSearchName(e.target.value)}
+            placeholder="Enter file name..."
+          />
+        </div>
+        <div className="filter-group">
+          <label>Include Tags:</label>
+          <select onChange={(e) => handleAddIncludeTag(e.target.value)} defaultValue="">
+            <option value="" disabled>Select a tag</option>
+            {availableTags.map((tag) => (
+              <option key={tag} value={tag}>{tag}</option>
+            ))}
+          </select>
+          <div className="tag-box">
+            {includeTags.map((tag) => (
+              <span key={tag} className="tag tag-include">
+                {tag} <button onClick={() => handleRemoveIncludeTag(tag)}>×</button>
+              </span>
+            ))}
+          </div>
+        </div>
+        <div className="filter-group">
+          <label>Exclude Tags:</label>
+          <select onChange={(e) => handleAddExcludeTag(e.target.value)} defaultValue="">
+            <option value="" disabled>Select a tag</option>
+            {availableTags.map((tag) => (
+              <option key={tag} value={tag}>{tag}</option>
+            ))}
+          </select>
+          <div className="tag-box">
+            {excludeTags.map((tag) => (
+              <span key={tag} className="tag tag-exclude">
+                {tag} <button onClick={() => handleRemoveExcludeTag(tag)}>×</button>
+              </span>
+            ))}
+          </div>
+        </div>
       </div>
       {filteredData.length > 0 && (
-        <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: '20px' }}>
+        <table className="data-table">
           <thead>
             <tr>
-              <th style={{ border: '1px solid #ddd', padding: '8px', cursor: 'pointer' }} onClick={() => handleSort('file')}>
-                File {sortField === 'file' ? (sortDirection === 'asc' ? '▲' : '▼') : ''}
+              <th onClick={() => handleSort('file')}>
+                File {sortField === 'file' && (sortDirection === 'asc' ? '▲' : '▼')}
               </th>
-              <th style={{ border: '1px solid #ddd', padding: '8px', cursor: 'pointer' }} onClick={() => handleSort('tags')}>
-                Tags {sortField === 'tags' ? (sortDirection === 'asc' ? '▲' : '▼') : ''}
+              <th onClick={() => handleSort('tags')}>
+                Tags {sortField === 'tags' && (sortDirection === 'asc' ? '▲' : '▼')}
               </th>
-              <th style={{ border: '1px solid #ddd', padding: '8px', cursor: 'pointer' }} onClick={() => handleSort('Date')}>
-                Date {sortField === 'Date' ? (sortDirection === 'asc' ? '▲' : '▼') : ''}
+              <th onClick={() => handleSort('Date')}>
+                Date {sortField === 'Date' && (sortDirection === 'asc' ? '▲' : '▼')}
               </th>
-              <th style={{ border: '1px solid #ddd', padding: '8px' }}>Chapters</th>
-              <th style={{ border: '1px solid #ddd', padding: '8px' }}>Done</th>
+              <th onClick={() => handleSort('chapters')}>
+                Chapters {sortField === 'chapters' && (sortDirection === 'asc' ? '▲' : '▼')}
+              </th>
+              <th onClick={() => handleSort('Done')}>
+                Done {sortField === 'Done' && (sortDirection === 'asc' ? '▲' : '▼')}
+              </th>
             </tr>
           </thead>
           <tbody>
             {filteredData.map((row, index) => (
               <tr key={index}>
-                <td style={{ border: '1px solid #ddd', padding: '8px' }}>{row.file}</td>
-                <td style={{ border: '1px solid #ddd', padding: '8px' }}>{row.tags}</td>
-                <td style={{ border: '1px solid #ddd', padding: '8px' }}>{row.Date}</td>
-                <td style={{ border: '1px solid #ddd', padding: '8px' }}>{row.chapters}</td>
-                <td style={{ border: '1px solid #ddd', padding: '8px' }}>{row.Done}</td>
+                <td>{row.file}</td>
+                <td>{row.tags}</td>
+                <td>{row.Date}</td>
+                <td>{row.chapters}</td>
+                <td>{row.Done}</td>
               </tr>
             ))}
           </tbody>
