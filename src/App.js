@@ -58,6 +58,8 @@ function App() {
   );
   const [dbBuffer, setDbBuffer] = useState(null);
   const [configVersion, setConfigVersion] = useState(0);
+  const [isConfigOpen, setIsConfigOpen] = useState(false);
+  const [isDarkMode, setIsDarkMode] = useState(false);
 
   const applyConfig = () => {
     try {
@@ -242,18 +244,30 @@ function App() {
     : [];
 
   return (
-    <div className="app-container">
-      <h1>Database Reader</h1>
-      <div className="config-section">
-        <h2>Edit Config (JSON)</h2>
-        <textarea
-          value={configJson}
-          onChange={(e) => setConfigJson(e.target.value)}
-          rows={20}
-          cols={80}
-        />
-        <button onClick={applyConfig}>Apply Config</button>
+    <div className={`app-container ${isDarkMode ? "dark-mode" : ""}`}>
+      <div className="header">
+        <h1>Database Reader</h1>
+        <div className="header-controls">
+          <button onClick={() => setIsConfigOpen(!isConfigOpen)}>
+            {isConfigOpen ? "Hide Config" : "Show Config"}
+          </button>
+          <button onClick={() => setIsDarkMode(!isDarkMode)}>
+            {isDarkMode ? "Light Mode" : "Dark Mode"}
+          </button>
+        </div>
       </div>
+      {isConfigOpen && (
+        <div className="config-section">
+          <h2>Edit Config (JSON)</h2>
+          <textarea
+            value={configJson}
+            onChange={(e) => setConfigJson(e.target.value)}
+            rows={15}
+            cols={80}
+          />
+          <button onClick={applyConfig}>Apply Config</button>
+        </div>
+      )}
       <div className="file-upload">
         <input type="file" onChange={handleFileUpload} accept=".db" />
       </div>
@@ -339,28 +353,30 @@ function App() {
         ))}
       </div>
       {filteredData.length > 0 && (
-        <table className="data-table">
-          <thead>
-            <tr>
-              {config.columns.map((col) => (
-                <th key={col.field} onClick={() => handleSort(col.field)}>
-                  {col.header}{" "}
-                  {sortField === col.field &&
-                    (sortDirection === "asc" ? "▲" : "▼")}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {filteredData.map((row, index) => (
-              <tr key={index}>
+        <div className="table-container">
+          <table className="data-table">
+            <thead>
+              <tr>
                 {config.columns.map((col) => (
-                  <td key={col.field}>{renderValue(row, col)}</td>
+                  <th key={col.field} onClick={() => handleSort(col.field)}>
+                    {col.header}{" "}
+                    {sortField === col.field &&
+                      (sortDirection === "asc" ? "▲" : "▼")}
+                  </th>
                 ))}
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {filteredData.map((row, index) => (
+                <tr key={index}>
+                  {config.columns.map((col) => (
+                    <td key={col.field}>{renderValue(row, col)}</td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       )}
     </div>
   );
