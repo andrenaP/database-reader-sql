@@ -61,6 +61,15 @@ function App() {
   const [isConfigOpen, setIsConfigOpen] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(false);
 
+  // Toggle dark mode class on body
+  useEffect(() => {
+    if (isDarkMode) {
+      document.body.classList.add("dark-mode");
+    } else {
+      document.body.classList.remove("dark-mode");
+    }
+  }, [isDarkMode]);
+
   const applyConfig = () => {
     try {
       const newConfig = JSON.parse(configJson);
