@@ -42,6 +42,8 @@ const defaultConfig = {
   defaultSortDir: "asc",
 };
 
+const REACT_APP_URL = process.env.REACT_APP_URL;
+
 function App() {
   const [data, setData] = useState([]);
   const [filteredData, setFilteredData] = useState([]);
@@ -99,7 +101,8 @@ function App() {
     const process = async () => {
       try {
         const SQL = await initSqlJs({
-          locateFile: () => "/sql-wasm.wasm",
+          locateFile: () =>
+            REACT_APP_URL ? `${REACT_APP_URL}/sql-wasm.wasm` : "/sql-wasm.wasm",
         });
         const db = new SQL.Database(new Uint8Array(dbBuffer));
 
