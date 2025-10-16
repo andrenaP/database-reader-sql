@@ -1,5 +1,8 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import initSqlJs from "sql.js";
+import { TabulatorFull as Tabulator } from "tabulator-tables";
+import "tabulator-tables/dist/css/tabulator.min.css";
+import "tabulator-tables/dist/css/tabulator_midnight.min.css";
 import "./App.css";
 
 const defaultConfig = {
@@ -46,13 +49,9 @@ const REACT_APP_URL = process.env.REACT_APP_URL;
 
 function App() {
   const [data, setData] = useState([]);
-  const [filteredData, setFilteredData] = useState([]);
+  const [unsortedFiltered, setUnsortedFiltered] = useState([]);
   const [searchName, setSearchName] = useState("");
   const [taggableFilters, setTaggableFilters] = useState({});
-  const [sortField, setSortField] = useState(defaultConfig.defaultSortField);
-  const [sortDirection, setSortDirection] = useState(
-    defaultConfig.defaultSortDir,
-  );
   const [availableValues, setAvailableValues] = useState({});
   const [config, setConfig] = useState(defaultConfig);
   const [configJson, setConfigJson] = useState(
@@ -62,6 +61,9 @@ function App() {
   const [configVersion, setConfigVersion] = useState(0);
   const [isConfigOpen, setIsConfigOpen] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(false);
+
+  const tableRef = useRef(null);
+  const tabulatorInstance = useRef(null);
 
   // Toggle dark mode class on body
   useEffect(() => {
@@ -77,10 +79,6 @@ function App() {
       const newConfig = JSON.parse(configJson);
       setConfig(newConfig);
       setConfigVersion((v) => v + 1);
-      setSortField(
-        newConfig.defaultSortField || newConfig.columns[0]?.field || "",
-      );
-      setSortDirection(newConfig.defaultSortDir || "asc");
       setTaggableFilters(
         Object.fromEntries(
           (newConfig.taggableColumns || []).map((col) => [
@@ -127,7 +125,6 @@ function App() {
         db.close();
 
         setData(results);
-        setFilteredData(results);
         setAvailableValues(available);
       } catch (error) {
         console.error("Error details:", error);
@@ -140,6 +137,7 @@ function App() {
     process();
   }, [dbBuffer, configVersion, config]);
 
+  // Filtering (without sorting)
   useEffect(() => {
     let filtered = [...data];
 
@@ -170,34 +168,94 @@ function App() {
       }
     }
 
-    filtered.sort((a, b) => {
-      const col = config.columns.find((c) => c.field === sortField);
-      const type = col ? col.type : "text";
-      let valA = getSortValue(a[sortField], type);
-      let valB = getSortValue(b[sortField], type);
+    setUnsortedFiltered(filtered);
+  }, [data, searchName, taggableFilters, config]);
 
-      if (valA < valB) return sortDirection === "asc" ? -1 : 1;
-      if (valA > valB) return sortDirection === "asc" ? 1 : -1;
-      return 0;
+  // Tabulator integration - FIXED DATE SORTING (Newest → Oldest → Empty)
+  useEffect(() => {
+    if (unsortedFiltered.length === 0) {
+      if (tabulatorInstance.current) {
+        tabulatorInstance.current.destroy();
+        tabulatorInstance.current = null;
+      }
+      return;
+    }
+
+    const columns = config.columns.map((col) => {
+      const colDef = {
+        title: col.header,
+        field: col.field,
+        headerSort: true,
+        resizable: true,
+        headerHozAlign: "left",
+      };
+
+      if (col.type === "date") {
+        colDef.sorter = (a, b) => {
+          const getDateScore = (dateStr) => {
+            if (!dateStr || dateStr === "") return 0; // Empty dates FIRST
+            return 1; // All dates AFTER empty
+          };
+
+          const scoreA = getDateScore(a);
+          const scoreB = getDateScore(b);
+
+          if (scoreA !== scoreB) {
+            return scoreB - scoreA; // 0 (empty) < 1 (dates)
+          }
+
+          // Both dates: NEWEST FIRST (descending)
+          return new Date(b).getTime() - new Date(a).getTime();
+        };
+        colDef.hozAlign = "left";
+      } else if (col.type === "number") {
+        colDef.sorter = "number";
+        colDef.hozAlign = "right";
+      } else if (col.type === "boolean") {
+        colDef.sorter = "boolean";
+        colDef.formatter = (cell) => {
+          const val = cell.getValue();
+          return val ? col.trueRender || "✅" : col.falseRender || "❌";
+        };
+        colDef.hozAlign = "center";
+        colDef.width = 80;
+      } else {
+        colDef.hozAlign = "left";
+      }
+
+      return colDef;
     });
 
-    setFilteredData(filtered);
-  }, [data, searchName, taggableFilters, sortField, sortDirection, config]);
-
-  const getSortValue = (val, type) => {
-    if (type === "date") return new Date(val || "1970-01-01");
-    if (type === "number") return Number(val) || 0;
-    if (type === "boolean") return val ? 1 : 0;
-    return val || "";
-  };
-
-  const renderValue = (row, col) => {
-    const val = row[col.field];
-    if (col.type === "boolean") {
-      return val ? col.trueRender : col.falseRender;
+    if (!tabulatorInstance.current) {
+      // Initial table creation
+      tabulatorInstance.current = new Tabulator(tableRef.current, {
+        data: unsortedFiltered,
+        columns,
+        layout: "fitColumns",
+        height: "calc(100vh - 300px)",
+        selectable: false,
+      });
+    } else {
+      // Update existing table
+      tabulatorInstance.current.setData(unsortedFiltered);
+      tabulatorInstance.current.setColumns(columns);
     }
-    return val;
-  };
+
+    // Apply dark mode class
+    if (tabulatorInstance.current) {
+      const tableEl = tabulatorInstance.current.element;
+      tableEl.classList.toggle("tabulator-midnight", isDarkMode);
+    }
+  }, [unsortedFiltered, config, isDarkMode]);
+
+  // Destroy Tabulator on unmount
+  useEffect(() => {
+    return () => {
+      if (tabulatorInstance.current) {
+        tabulatorInstance.current.destroy();
+      }
+    };
+  }, []);
 
   const handleAddTaggableFilter = (col, value, type) => {
     if (!value) return;
@@ -223,13 +281,6 @@ function App() {
       }
       return filters;
     });
-  };
-
-  const handleSort = (field) => {
-    const newDirection =
-      sortField === field && sortDirection === "asc" ? "desc" : "asc";
-    setSortField(field);
-    setSortDirection(newDirection);
   };
 
   const handleFileUpload = async (event) => {
@@ -364,32 +415,7 @@ function App() {
           </div>
         ))}
       </div>
-      {filteredData.length > 0 && (
-        <div className="table-container">
-          <table className="data-table">
-            <thead>
-              <tr>
-                {config.columns.map((col) => (
-                  <th key={col.field} onClick={() => handleSort(col.field)}>
-                    {col.header}{" "}
-                    {sortField === col.field &&
-                      (sortDirection === "asc" ? "▲" : "▼")}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {filteredData.map((row, index) => (
-                <tr key={index}>
-                  {config.columns.map((col) => (
-                    <td key={col.field}>{renderValue(row, col)}</td>
-                  ))}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
+      <div ref={tableRef} className="table-container"></div>
     </div>
   );
 }
