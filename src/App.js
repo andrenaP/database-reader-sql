@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import initSqlJs from "sql.js";
 import { TabulatorFull as Tabulator } from "tabulator-tables";
+import Select from "react-select";
 import "tabulator-tables/dist/css/tabulator.min.css";
 import "tabulator-tables/dist/css/tabulator_midnight.min.css";
 import "./App.css";
@@ -42,7 +43,7 @@ const defaultConfig = {
     },
   ],
   defaultSortField: "Date",
-  defaultSortDir: "asc",
+  defaultSortDir: "desc",
 };
 
 const REACT_APP_URL = process.env.REACT_APP_URL;
@@ -60,7 +61,7 @@ function App() {
   const [dbBuffer, setDbBuffer] = useState(null);
   const [configVersion, setConfigVersion] = useState(0);
   const [isConfigOpen, setIsConfigOpen] = useState(false);
-  const [isDarkMode, setIsDarkMode] = useState(false);
+  const [isDarkMode, setIsDarkMode] = useState(true);
 
   const tableRef = useRef(null);
   const tabulatorInstance = useRef(null);
@@ -171,7 +172,7 @@ function App() {
     setUnsortedFiltered(filtered);
   }, [data, searchName, taggableFilters, config]);
 
-  // Tabulator integration - FIXED DATE SORTING (Newest → Oldest → Empty)
+  // Tabulator integration
   useEffect(() => {
     if (unsortedFiltered.length === 0) {
       if (tabulatorInstance.current) {
@@ -234,6 +235,9 @@ function App() {
         layout: "fitColumns",
         height: "calc(100vh - 300px)",
         selectable: false,
+        initialSort: [
+          { column: config.defaultSortField, dir: config.defaultSortDir },
+        ],
       });
     } else {
       // Update existing table
@@ -296,6 +300,31 @@ function App() {
     }
   };
 
+  const customSelectStyles = {
+    control: (provided, { isFocused }) => ({
+      ...provided,
+      backgroundColor: isDarkMode ? "#333" : "#fff",
+      color: isDarkMode ? "#fff" : "#000",
+      borderColor: isFocused ? "#007bff" : isDarkMode ? "#555" : "#ccc",
+    }),
+    menu: (provided) => ({
+      ...provided,
+      backgroundColor: isDarkMode ? "#333" : "#fff",
+      color: isDarkMode ? "#fff" : "#000",
+    }),
+    option: (provided, { isFocused, isSelected }) => ({
+      ...provided,
+      backgroundColor: isSelected
+        ? "#007bff"
+        : isFocused
+          ? isDarkMode
+            ? "#444"
+            : "#f0f0f0"
+          : undefined,
+      color: isSelected ? "#fff" : isDarkMode ? "#fff" : "#000",
+    }),
+  };
+
   const textCol = config.textSearchColumn
     ? config.columns.find((c) => c.field === config.textSearchColumn)
     : null;
@@ -346,74 +375,88 @@ function App() {
             />
           </div>
         )}
-        {taggableCols.map((col) => (
-          <div key={col.field} className="filter-group">
-            <div>
-              <label>Include {col.header}:</label>
-              <select
-                onChange={(e) =>
-                  handleAddTaggableFilter(col.field, e.target.value, "include")
-                }
-                value=""
-              >
-                <option value="" disabled>
-                  Select a {col.header.toLowerCase()}
-                </option>
-                {(availableValues[col.field] || []).map((value) => (
-                  <option key={value} value={value}>
-                    {value}
-                  </option>
-                ))}
-              </select>
-              <div className="tag-box">
-                {taggableFilters[col.field]?.include.map((value) => (
-                  <span key={value} className="tag tag-include">
-                    {value}{" "}
-                    <button
-                      onClick={() =>
-                        handleRemoveTaggableFilter(col.field, value, "include")
-                      }
-                    >
-                      ×
-                    </button>
-                  </span>
-                ))}
+        {taggableCols.map((col) => {
+          const options = (availableValues[col.field] || []).map((value) => ({
+            value,
+            label: value,
+          }));
+          return (
+            <div key={col.field} className="filter-group">
+              <div>
+                <label>Include {col.header}:</label>
+                <Select
+                  options={options}
+                  onChange={(selected) =>
+                    selected &&
+                    handleAddTaggableFilter(
+                      col.field,
+                      selected.value,
+                      "include",
+                    )
+                  }
+                  placeholder={`Select a ${col.header.toLowerCase()}`}
+                  isSearchable={true}
+                  value={null}
+                  styles={customSelectStyles}
+                />
+                <div className="tag-box">
+                  {taggableFilters[col.field]?.include.map((value) => (
+                    <span key={value} className="tag tag-include">
+                      {value}{" "}
+                      <button
+                        onClick={() =>
+                          handleRemoveTaggableFilter(
+                            col.field,
+                            value,
+                            "include",
+                          )
+                        }
+                      >
+                        ×
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <label>Exclude {col.header}:</label>
+                <Select
+                  options={options}
+                  onChange={(selected) =>
+                    selected &&
+                    handleAddTaggableFilter(
+                      col.field,
+                      selected.value,
+                      "exclude",
+                    )
+                  }
+                  placeholder={`Select a ${col.header.toLowerCase()}`}
+                  isSearchable={true}
+                  value={null}
+                  styles={customSelectStyles}
+                />
+                <div className="tag-box">
+                  {taggableFilters[col.field]?.exclude.map((value) => (
+                    <span key={value} className="tag tag-exclude">
+                      {value}{" "}
+                      <button
+                        onClick={() =>
+                          handleRemoveTaggableFilter(
+                            col.field,
+                            value,
+                            "exclude",
+                          )
+                        }
+                      >
+                        ×
+                      </button>
+                    </span>
+                  ))}
+                </div>
               </div>
             </div>
-            <div>
-              <label>Exclude {col.header}:</label>
-              <select
-                onChange={(e) =>
-                  handleAddTaggableFilter(col.field, e.target.value, "exclude")
-                }
-                value=""
-              >
-                <option value="" disabled>
-                  Select a {col.header.toLowerCase()}
-                </option>
-                {(availableValues[col.field] || []).map((value) => (
-                  <option key={value} value={value}>
-                    {value}
-                  </option>
-                ))}
-              </select>
-              <div className="tag-box">
-                {taggableFilters[col.field]?.exclude.map((value) => (
-                  <span key={value} className="tag tag-exclude">
-                    {value}{" "}
-                    <button
-                      onClick={() =>
-                        handleRemoveTaggableFilter(col.field, value, "exclude")
-                      }
-                    >
-                      ×
-                    </button>
-                  </span>
-                ))}
-              </div>
-            </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
       <div ref={tableRef} className="table-container"></div>
     </div>
