@@ -50,41 +50,41 @@ const REACT_APP_URL = process.env.REACT_APP_URL;
 
 // Generate random color for tags - consistent across renders
 // FIXED: Softer, more transparent colors - EASY ON EYES! 👀
-const generateTagColors = (values) => {
-  const colors = [
-    "rgba(255, 107, 107, 0.5)", // Soft red
-    "rgba(78, 205, 196, 0.5)", // Soft teal
-    "rgba(69, 183, 209, 0.5)", // Soft blue
-    "rgba(150, 206, 180, 0.5)", // Soft green
-    "rgba(254, 202, 87, 0.5)", // Soft yellow
-    "rgba(255, 159, 243, 0.5)", // Soft pink
-    "rgba(84, 160, 255, 0.5)", // Soft blue
-    "rgba(95, 39, 205, 0.5)", // Soft purple
-    "rgba(0, 210, 211, 0.5)", // Soft cyan
-    "rgba(255, 159, 67, 0.5)", // Soft orange
-    "rgba(238, 90, 36, 0.5)", // Soft red-orange
-    "rgba(16, 172, 132, 0.5)", // Soft green
-    "rgba(95, 39, 205, 0.5)", // Soft purple
-    "rgba(0, 206, 201, 0.5)", // Soft teal
-    "rgba(225, 112, 85, 0.5)", // Soft coral
-    "rgba(108, 92, 231, 0.5)", // Soft violet
-    "rgba(162, 155, 254, 0.5)", // Soft lavender
-    "rgba(253, 203, 110, 0.5)", // Soft gold
-    "rgba(253, 121, 168, 0.5)", // Soft rose
-    "rgba(0, 184, 148, 0.5)", // Soft mint
+// ✨ DYNAMIC: Colors generated ON-THE-FLY for REAL tags only!
+const generateTagColors = () => {
+  const baseColors = [
+    [255, 107, 107],
+    [78, 205, 196],
+    [69, 183, 209],
+    [150, 206, 180],
+    [254, 202, 87],
+    [255, 159, 243],
+    [84, 160, 255],
+    [95, 39, 205],
+    [0, 210, 211],
+    [255, 159, 67],
+    [238, 90, 36],
+    [16, 172, 132],
+    [108, 92, 231],
+    [0, 206, 201],
+    [225, 112, 85],
+    [162, 155, 254],
+    [253, 203, 110],
+    [253, 121, 168],
+    [0, 184, 148],
+    [162, 155, 254],
   ];
 
-  const colorMap = {};
-  let colorIndex = 0;
-
-  values.forEach((value) => {
-    if (!colorMap[value]) {
-      colorMap[value] = colors[colorIndex % colors.length];
-      colorIndex++;
+  return (tag) => {
+    // Simple hash to get consistent color for each tag
+    let hash = 0;
+    for (let i = 0; i < tag.length; i++) {
+      hash = tag.charCodeAt(i) + ((hash << 5) - hash);
     }
-  });
-
-  return colorMap;
+    const index = Math.abs(hash) % baseColors.length;
+    const [r, g, b] = baseColors[index];
+    return `rgba(${r}, ${g}, ${b}, 0.5)`;
+  };
 };
 
 function App() {
@@ -93,7 +93,7 @@ function App() {
   const [searchName, setSearchName] = useState("");
   const [taggableFilters, setTaggableFilters] = useState({});
   const [availableValues, setAvailableValues] = useState({});
-  const [tagColors, setTagColors] = useState({}); // NEW: Store tag colors
+  const getTagColor = useRef(generateTagColors());
   const [config, setConfig] = useState(defaultConfig);
   const [configJson, setConfigJson] = useState(
     JSON.stringify(defaultConfig, null, 2),
@@ -116,15 +116,15 @@ function App() {
   }, [isDarkMode]);
 
   // NEW: Generate colors when availableValues change
-  useEffect(() => {
-    const allValues = [];
-    Object.values(availableValues).forEach((values) => {
-      allValues.push(...values);
-    });
-    if (allValues.length > 0) {
-      setTagColors(generateTagColors(allValues));
-    }
-  }, [availableValues]);
+  // useEffect(() => {
+  //   const allValues = [];
+  //   Object.values(availableValues).forEach((values) => {
+  //     allValues.push(...values);
+  //   });
+  //   if (allValues.length > 0) {
+  //     setTagColors(generateTagColors(allValues));
+  //   }
+  // }, [availableValues]);
 
   const applyConfig = () => {
     try {
@@ -241,7 +241,7 @@ function App() {
       .map(
         (tag) => `
       <span class="table-tag"
-            style="background-color: ${tagColors[tag] || "#666"}; color: white;"
+            style="background-color: ${getTagColor.current(tag)}; color: white;"
             title="Click to filter by: ${tag}"
             onclick="window.tagFilter('${cell.getColumn().getField()}', '${tag}')">
         ${tag}
@@ -317,7 +317,7 @@ function App() {
         data: unsortedFiltered,
         columns,
         layout: "fitColumns",
-        height: "calc(100vh - 300px)",
+        height: "calc(100vh - 150px)",
         selectable: false,
         initialSort: [
           { column: config.defaultSortField, dir: config.defaultSortDir },
@@ -332,7 +332,7 @@ function App() {
       const tableEl = tabulatorInstance.current.element;
       tableEl.classList.toggle("tabulator-midnight", isDarkMode);
     }
-  }, [unsortedFiltered, config, isDarkMode, tagColors]); // Added tagColors dependency
+  }, [unsortedFiltered, config, isDarkMode]); // Added tagColors dependency
 
   // Destroy Tabulator on unmount
   useEffect(() => {
@@ -545,7 +545,10 @@ function App() {
                     <span
                       key={value}
                       className="tag tag-include"
-                      style={{ backgroundColor: tagColors[value] || "#007bff" }}
+                      style={{
+                        backgroundColor:
+                          getTagColor.current(value) || "#007bff",
+                      }}
                     >
                       {value}{" "}
                       <button
@@ -585,7 +588,10 @@ function App() {
                     <span
                       key={value}
                       className="tag tag-exclude"
-                      style={{ backgroundColor: tagColors[value] || "#ff4444" }}
+                      style={{
+                        backgroundColor:
+                          getTagColor.current(value) || "#ff4444",
+                      }}
                     >
                       {value}{" "}
                       <button
