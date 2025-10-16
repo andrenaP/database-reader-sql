@@ -309,7 +309,6 @@ body {
     background-color: var(--table-header-hover) !important;
 }
 
-/* Column Title Holders & Titles - THE MISSING PIECES */
 .tabulator .tabulator-header .tabulator-col .tabulator-col-title-holder {
     background-color: var(--table-header-bg) !important;
     color: var(--text-color) !important;

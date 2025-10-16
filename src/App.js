@@ -48,9 +48,6 @@ const defaultConfig = {
 
 const REACT_APP_URL = process.env.REACT_APP_URL;
 
-// Generate random color for tags - consistent across renders
-// FIXED: Softer, more transparent colors - EASY ON EYES! 👀
-// ✨ DYNAMIC: Colors generated ON-THE-FLY for REAL tags only!
 const generateTagColors = () => {
   const baseColors = [
     [255, 107, 107],
@@ -115,17 +112,6 @@ function App() {
     }
   }, [isDarkMode]);
 
-  // NEW: Generate colors when availableValues change
-  // useEffect(() => {
-  //   const allValues = [];
-  //   Object.values(availableValues).forEach((values) => {
-  //     allValues.push(...values);
-  //   });
-  //   if (allValues.length > 0) {
-  //     setTagColors(generateTagColors(allValues));
-  //   }
-  // }, [availableValues]);
-
   const applyConfig = () => {
     try {
       const newConfig = JSON.parse(configJson);
@@ -189,7 +175,7 @@ function App() {
     process();
   }, [dbBuffer, configVersion, config]);
 
-  // Filtering (without sorting)
+  // Filtering
   useEffect(() => {
     let filtered = [...data];
 
@@ -273,10 +259,10 @@ function App() {
       };
 
       if (col.type === "taggable") {
-        colDef.formatter = (cell) => renderTaggableCell(cell); // This now works!
+        colDef.formatter = (cell) => renderTaggableCell(cell);
         colDef.hozAlign = "left";
-        colDef.width = 250; // More space
-        colDef.cssClass = "taggable-column"; // For styling
+        colDef.width = 250;
+        colDef.cssClass = "taggable-column";
       } else if (col.type === "date") {
         colDef.sorter = (a, b) => {
           const getDateScore = (dateStr) => {
@@ -332,7 +318,7 @@ function App() {
       const tableEl = tabulatorInstance.current.element;
       tableEl.classList.toggle("tabulator-midnight", isDarkMode);
     }
-  }, [unsortedFiltered, config, isDarkMode]); // Added tagColors dependency
+  }, [unsortedFiltered, config, isDarkMode]);
 
   // Destroy Tabulator on unmount
   useEffect(() => {
