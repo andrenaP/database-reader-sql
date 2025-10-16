@@ -48,12 +48,52 @@ const defaultConfig = {
 
 const REACT_APP_URL = process.env.REACT_APP_URL;
 
+// Generate random color for tags - consistent across renders
+// FIXED: Softer, more transparent colors - EASY ON EYES! 👀
+const generateTagColors = (values) => {
+  const colors = [
+    "rgba(255, 107, 107, 0.5)", // Soft red
+    "rgba(78, 205, 196, 0.5)", // Soft teal
+    "rgba(69, 183, 209, 0.5)", // Soft blue
+    "rgba(150, 206, 180, 0.5)", // Soft green
+    "rgba(254, 202, 87, 0.5)", // Soft yellow
+    "rgba(255, 159, 243, 0.5)", // Soft pink
+    "rgba(84, 160, 255, 0.5)", // Soft blue
+    "rgba(95, 39, 205, 0.5)", // Soft purple
+    "rgba(0, 210, 211, 0.5)", // Soft cyan
+    "rgba(255, 159, 67, 0.5)", // Soft orange
+    "rgba(238, 90, 36, 0.5)", // Soft red-orange
+    "rgba(16, 172, 132, 0.5)", // Soft green
+    "rgba(95, 39, 205, 0.5)", // Soft purple
+    "rgba(0, 206, 201, 0.5)", // Soft teal
+    "rgba(225, 112, 85, 0.5)", // Soft coral
+    "rgba(108, 92, 231, 0.5)", // Soft violet
+    "rgba(162, 155, 254, 0.5)", // Soft lavender
+    "rgba(253, 203, 110, 0.5)", // Soft gold
+    "rgba(253, 121, 168, 0.5)", // Soft rose
+    "rgba(0, 184, 148, 0.5)", // Soft mint
+  ];
+
+  const colorMap = {};
+  let colorIndex = 0;
+
+  values.forEach((value) => {
+    if (!colorMap[value]) {
+      colorMap[value] = colors[colorIndex % colors.length];
+      colorIndex++;
+    }
+  });
+
+  return colorMap;
+};
+
 function App() {
   const [data, setData] = useState([]);
   const [unsortedFiltered, setUnsortedFiltered] = useState([]);
   const [searchName, setSearchName] = useState("");
   const [taggableFilters, setTaggableFilters] = useState({});
   const [availableValues, setAvailableValues] = useState({});
+  const [tagColors, setTagColors] = useState({}); // NEW: Store tag colors
   const [config, setConfig] = useState(defaultConfig);
   const [configJson, setConfigJson] = useState(
     JSON.stringify(defaultConfig, null, 2),
@@ -74,6 +114,17 @@ function App() {
       document.body.classList.remove("dark-mode");
     }
   }, [isDarkMode]);
+
+  // NEW: Generate colors when availableValues change
+  useEffect(() => {
+    const allValues = [];
+    Object.values(availableValues).forEach((values) => {
+      allValues.push(...values);
+    });
+    if (allValues.length > 0) {
+      setTagColors(generateTagColors(allValues));
+    }
+  }, [availableValues]);
 
   const applyConfig = () => {
     try {
@@ -172,6 +223,36 @@ function App() {
     setUnsortedFiltered(filtered);
   }, [data, searchName, taggableFilters, config]);
 
+  useEffect(() => {
+    window.tagFilter = (col, value) => {
+      handleAddTaggableFilter(col, value, "include");
+    };
+  }, []);
+  const renderTaggableCell = (cell) => {
+    const value = cell.getValue() || "";
+    const tags = value
+      .split(",")
+      .map((tag) => tag.trim())
+      .filter((tag) => tag);
+
+    if (tags.length === 0) return "";
+
+    const htmlTags = tags
+      .map(
+        (tag) => `
+      <span class="table-tag"
+            style="background-color: ${tagColors[tag] || "#666"}; color: white;"
+            title="Click to filter by: ${tag}"
+            onclick="window.tagFilter('${cell.getColumn().getField()}', '${tag}')">
+        ${tag}
+      </span>
+    `,
+      )
+      .join("");
+
+    return `<div class="table-tag-container">${htmlTags}</div>`;
+  };
+
   // Tabulator integration
   useEffect(() => {
     if (unsortedFiltered.length === 0) {
@@ -191,21 +272,25 @@ function App() {
         headerHozAlign: "left",
       };
 
-      if (col.type === "date") {
+      if (col.type === "taggable") {
+        colDef.formatter = (cell) => renderTaggableCell(cell); // This now works!
+        colDef.hozAlign = "left";
+        colDef.width = 250; // More space
+        colDef.cssClass = "taggable-column"; // For styling
+      } else if (col.type === "date") {
         colDef.sorter = (a, b) => {
           const getDateScore = (dateStr) => {
-            if (!dateStr || dateStr === "") return 0; // Empty dates FIRST
-            return 1; // All dates AFTER empty
+            if (!dateStr || dateStr === "") return 0;
+            return 1;
           };
 
           const scoreA = getDateScore(a);
           const scoreB = getDateScore(b);
 
           if (scoreA !== scoreB) {
-            return scoreB - scoreA; // 0 (empty) < 1 (dates)
+            return scoreB - scoreA;
           }
 
-          // Both dates: NEWEST FIRST (descending)
           return new Date(b).getTime() - new Date(a).getTime();
         };
         colDef.hozAlign = "left";
@@ -228,7 +313,6 @@ function App() {
     });
 
     if (!tabulatorInstance.current) {
-      // Initial table creation
       tabulatorInstance.current = new Tabulator(tableRef.current, {
         data: unsortedFiltered,
         columns,
@@ -240,17 +324,15 @@ function App() {
         ],
       });
     } else {
-      // Update existing table
       tabulatorInstance.current.setData(unsortedFiltered);
       tabulatorInstance.current.setColumns(columns);
     }
 
-    // Apply dark mode class
     if (tabulatorInstance.current) {
       const tableEl = tabulatorInstance.current.element;
       tableEl.classList.toggle("tabulator-midnight", isDarkMode);
     }
-  }, [unsortedFiltered, config, isDarkMode]);
+  }, [unsortedFiltered, config, isDarkMode, tagColors]); // Added tagColors dependency
 
   // Destroy Tabulator on unmount
   useEffect(() => {
@@ -460,7 +542,11 @@ function App() {
                 />
                 <div className="tag-box">
                   {taggableFilters[col.field]?.include.map((value) => (
-                    <span key={value} className="tag tag-include">
+                    <span
+                      key={value}
+                      className="tag tag-include"
+                      style={{ backgroundColor: tagColors[value] || "#007bff" }}
+                    >
                       {value}{" "}
                       <button
                         onClick={() =>
@@ -496,7 +582,11 @@ function App() {
                 />
                 <div className="tag-box">
                   {taggableFilters[col.field]?.exclude.map((value) => (
-                    <span key={value} className="tag tag-exclude">
+                    <span
+                      key={value}
+                      className="tag tag-exclude"
+                      style={{ backgroundColor: tagColors[value] || "#ff4444" }}
+                    >
                       {value}{" "}
                       <button
                         onClick={() =>
