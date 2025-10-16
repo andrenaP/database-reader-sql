@@ -304,13 +304,39 @@ function App() {
     control: (provided, { isFocused }) => ({
       ...provided,
       backgroundColor: isDarkMode ? "#333" : "#fff",
-      color: isDarkMode ? "#fff" : "#000",
-      borderColor: isFocused ? "#007bff" : isDarkMode ? "#555" : "#ccc",
+      color: isDarkMode ? "#e0e0e0" : "#333",
+      borderColor: isFocused ? "#007bff" : isDarkMode ? "#555" : "#ddd",
+      boxShadow: isFocused ? "0 0 0 1px #007bff" : "none",
+      "&:hover": {
+        borderColor: isFocused ? "#007bff" : isDarkMode ? "#666" : "#bbb",
+      },
+      minHeight: "32px",
+    }),
+    valueContainer: (provided) => ({
+      ...provided,
+      color: isDarkMode ? "#e0e0e0" : "#333",
+      padding: "2px 8px",
+    }),
+    input: (provided) => ({
+      ...provided,
+      color: isDarkMode ? "#e0e0e0" : "#333",
+    }),
+    placeholder: (provided) => ({
+      ...provided,
+      color: isDarkMode ? "#b0b0b0" : "#999",
+    }),
+    singleValue: (provided) => ({
+      ...provided,
+      color: isDarkMode ? "#e0e0e0" : "#333",
     }),
     menu: (provided) => ({
       ...provided,
       backgroundColor: isDarkMode ? "#333" : "#fff",
-      color: isDarkMode ? "#fff" : "#000",
+      marginTop: "2px",
+    }),
+    menuList: (provided) => ({
+      ...provided,
+      padding: "2px 0",
     }),
     option: (provided, { isFocused, isSelected }) => ({
       ...provided,
@@ -320,8 +346,41 @@ function App() {
           ? isDarkMode
             ? "#444"
             : "#f0f0f0"
-          : undefined,
-      color: isSelected ? "#fff" : isDarkMode ? "#fff" : "#000",
+          : "transparent",
+      color: isSelected ? "#fff" : isDarkMode ? "#e0e0e0" : "#333",
+      "&:hover": {
+        backgroundColor: isSelected
+          ? "#007bff"
+          : isDarkMode
+            ? "#444"
+            : "#f0f0f0",
+      },
+      padding: "8px 12px",
+    }),
+    multiValue: (provided) => ({
+      ...provided,
+      backgroundColor: isDarkMode ? "#444" : "#f0f0f0",
+      color: isDarkMode ? "#e0e0e0" : "#333",
+    }),
+    multiValueLabel: (provided) => ({
+      ...provided,
+      color: isDarkMode ? "#e0e0e0" : "#333",
+    }),
+    multiValueRemove: (provided) => ({
+      ...provided,
+      color: isDarkMode ? "#e0e0e0" : "#666",
+      "&:hover": {
+        backgroundColor: isDarkMode ? "#555" : "#e0e0e0",
+        color: isDarkMode ? "#fff" : "#333",
+      },
+    }),
+    indicatorSeparator: (provided) => ({
+      ...provided,
+      backgroundColor: isDarkMode ? "#555" : "#ddd",
+    }),
+    dropdownIndicator: (provided) => ({
+      ...provided,
+      color: isDarkMode ? "#b0b0b0" : "#666",
     }),
   };
 

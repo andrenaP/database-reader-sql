@@ -287,3 +287,104 @@ body {
     color: var(--table-text);
     transition: color 0.3s;
 }
+/* Tabulator Base Styles - Override defaults */
+.tabulator {
+    background-color: var(--container-bg) !important;
+    color: var(--table-text) !important;
+    border: 1px solid var(--input-border) !important;
+}
+
+/* Headers */
+.tabulator .tabulator-header {
+    background-color: var(--table-header-bg) !important;
+    border-bottom: 1px solid var(--input-border) !important;
+}
+
+.tabulator .tabulator-header .tabulator-col {
+    background-color: var(--table-header-bg) !important;
+    border-right: 1px solid var(--input-border) !important;
+}
+
+.tabulator .tabulator-header .tabulator-col:hover {
+    background-color: var(--table-header-hover) !important;
+}
+
+/* Column Title Holders & Titles - THE MISSING PIECES */
+.tabulator .tabulator-header .tabulator-col .tabulator-col-title-holder {
+    background-color: var(--table-header-bg) !important;
+    color: var(--text-color) !important;
+}
+
+.tabulator .tabulator-header .tabulator-col .tabulator-col-title {
+    color: var(--text-color) !important;
+    font-weight: 600 !important;
+}
+
+.tabulator-midnight
+    .tabulator-header
+    .tabulator-col
+    .tabulator-col-title-holder {
+    background-color: var(--table-header-bg) !important;
+    color: var(--text-color) !important;
+}
+
+.tabulator-midnight .tabulator-header .tabulator-col .tabulator-col-title {
+    color: var(--text-color) !important;
+}
+
+/* Rows */
+.tabulator .tabulator-row {
+    background-color: var(--container-bg) !important;
+    border-bottom: 1px solid var(--input-border) !important;
+}
+
+.tabulator .tabulator-row:hover {
+    background-color: var(--table-row-hover) !important;
+}
+
+.tabulator .tabulator-row .tabulator-cell {
+    background-color: var(--container-bg) !important;
+    color: var(--table-text) !important;
+    border-right: 1px solid var(--input-border) !important;
+}
+
+.tabulator-midnight .tabulator-row {
+    background-color: var(--container-bg) !important;
+}
+
+.tabulator-midnight .tabulator-row:hover {
+    background-color: var(--table-row-hover) !important;
+}
+
+.tabulator-midnight .tabulator-row .tabulator-cell {
+    background-color: var(--container-bg) !important;
+    color: var(--table-text) !important;
+}
+
+/* Scrollbar */
+.tabulator .tabulator-tableholder .tabulator-table::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+.tabulator .tabulator-tableholder .tabulator-table::-webkit-scrollbar-track {
+    background: var(--container-bg);
+}
+
+.tabulator .tabulator-tableholder .tabulator-table::-webkit-scrollbar-thumb {
+    background: var(--input-border);
+    border-radius: 4px;
+}
+
+.tabulator
+    .tabulator-tableholder
+    .tabulator-table::-webkit-scrollbar-thumb:hover {
+    background: var(--table-header-bg);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .tabulator .tabulator-col {
+        min-width: 120px !important;
+    }
+}
