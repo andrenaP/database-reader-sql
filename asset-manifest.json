@@ -1,15 +1,15 @@
 {
   "files": {
     "main.css": "/database-reader-sql/static/css/main.0b37ef6e.css",
-    "main.js": "/database-reader-sql/static/js/main.f69cefc8.js",
+    "main.js": "/database-reader-sql/static/js/main.092ff92a.js",
     "static/js/453.33b02a7f.chunk.js": "/database-reader-sql/static/js/453.33b02a7f.chunk.js",
     "index.html": "/database-reader-sql/index.html",
     "main.0b37ef6e.css.map": "/database-reader-sql/static/css/main.0b37ef6e.css.map",
-    "main.f69cefc8.js.map": "/database-reader-sql/static/js/main.f69cefc8.js.map",
+    "main.092ff92a.js.map": "/database-reader-sql/static/js/main.092ff92a.js.map",
     "453.33b02a7f.chunk.js.map": "/database-reader-sql/static/js/453.33b02a7f.chunk.js.map"
   },
   "entrypoints": [
     "static/css/main.0b37ef6e.css",
-    "static/js/main.f69cefc8.js"
+    "static/js/main.092ff92a.js"
   ]
 }
