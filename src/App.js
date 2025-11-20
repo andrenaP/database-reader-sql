@@ -489,6 +489,14 @@ function App() {
       )}
       <div className="file-upload">
         <input type="file" onChange={handleFileUpload} accept=".db" />
+        <a
+          href={`${process.env.PUBLIC_URL}/test-full.db`}
+          download="test-full.db"
+          className={`button ${isDarkMode ? "dark-mode-link" : ""}`}
+          title="Download the example database file."
+        >
+          Download Example DB
+        </a>
       </div>
       <div className="filters">
         {textCol && (
