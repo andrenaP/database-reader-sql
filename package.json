@@ -1,7 +1,8 @@
 {
   "name": "database-reader-sql",
+  "main": "main.js",
   "version": "0.1.0",
-  "homepage": "https://andrenaP.github.io/database-reader-sql",
+  "homepage": "./",
   "private": true,
   "dependencies": {
     "@testing-library/dom": "^10.4.1",
@@ -25,7 +26,10 @@
     "test": "react-app-rewired test",
     "eject": "react-scripts eject",
     "predeploy": "npm run build",
-    "deploy": "gh-pages -d build"
+    "deploy": "gh-pages -d build",
+    "electron-dev": "concurrently \"npm start\" \"wait-on http://localhost:3000 && electron .\"",
+    "electron-build": "npm run build && electron-builder",
+    "pack": "electron-builder --dir"
   },
   "eslintConfig": {
     "extends": [
@@ -46,7 +50,26 @@
     ]
   },
   "devDependencies": {
+    "concurrently": "^9.2.1",
+    "electron": "^39.2.3",
+    "electron-builder": "^26.0.12",
     "gh-pages": "^6.1.1",
-    "react-app-rewired": "^2.2.1"
+    "react-app-rewired": "^2.2.1",
+    "wait-on": "^9.0.3"
+  },
+  "build": {
+    "appId": "github.com/andrenaP",
+    "productName": "DatabaseReader",
+    "extraMetadata": {
+      "main": "main.js"
+    },
+    "files": [
+      "build/**/*",
+      "main.js",
+      "preload.js"
+    ],
+    "directories": {
+      "buildResources": "public"
+    }
   }
 }

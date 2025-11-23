@@ -137,8 +137,13 @@ function App() {
     const process = async () => {
       try {
         const SQL = await initSqlJs({
-          locateFile: () =>
-            REACT_APP_URL ? `${REACT_APP_URL}/sql-wasm.wasm` : "/sql-wasm.wasm",
+          locateFile: (file) => {
+            if (REACT_APP_URL) {
+              return `${REACT_APP_URL}/${file}`;
+            }
+            // For Electron or local file system deployment
+            return `./${file}`;
+          },
         });
         const db = new SQL.Database(new Uint8Array(dbBuffer));
 
