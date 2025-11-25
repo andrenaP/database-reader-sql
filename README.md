@@ -22,9 +22,9 @@ This tool is particularly useful for exploring structured data (e.g., personal k
 [Here](https://andrenap.github.io/database-reader-sql/)
 An example database (`test-full.db`) is included for immediate testing.
 
-## Screenshots
+## Screenshot
 
-*They will ve there soon*
+![main.jpg](https://github.com/andrenaP/database-reader-sql/blob/096c68ffbea4711711dec6ec9d20406f32b1952b/img/main.jpg)
 
 ## Usage
 
