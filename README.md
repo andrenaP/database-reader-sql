@@ -19,6 +19,7 @@ This tool is particularly useful for exploring structured data (e.g., personal k
 
 ## Live Demo
 
+[Here](https://andrenap.github.io/database-reader-sql/)
 An example database (`test-full.db`) is included for immediate testing.
 
 ## Screenshots
