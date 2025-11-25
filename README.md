@@ -1,70 +1,73 @@
-# Getting Started with Create React App
+# SQLite Database Viewer
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+A lightweight, client-side React application for browsing and filtering SQLite databases directly in the browser using **sql.js** and **Tabulator**.
 
-## Available Scripts
+This tool is particularly useful for exploring structured data (e.g., personal knowledge bases, Obsidian vaults with DataView/SQL plugins, reading trackers, or any custom SQLite dataset) without requiring a server backend.
 
-In the project directory, you can run:
+## Features
 
-### `npm start`
+- **Fully client-side**: No data is uploaded or sent anywhere — everything runs locally in your browser.
+- **Interactive table** powered by [Tabulator](https://tabulator.info/) with sorting, column resizing, and responsive layout.
+- **Clickable tag/backlink filtering**: Tags and backlinks are rendered as colored, clickable badges that instantly filter the table.
+- **Advanced filtering**:
+  - Full-text search on a configurable column
+  - Include/exclude filters for taggable columns (e.g., tags, backlinks)
+- **Customizable via JSON configuration** — define your own SQL query, columns, sorting, and behavior.
+- **Dark/light mode toggle**
+- **Supports custom column types**: text, date, number, boolean, and taggable (with visual badges)
+- **No build tools required** — works with a simple static deployment
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+## Live Demo
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+An example database (`test-full.db`) is included for immediate testing.
 
-### `npm test`
+## Screenshots
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+*They will ve there soon*
 
-### `npm run build`
+## Usage
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+1. Open the application in your browser.
+2. Click **"Choose File"** and select your `.db` SQLite file.
+   - Alternatively, download the provided `test-full.db` example to explore the features.
+3. The main table will load using the default query.
+4. Use the filters above the table:
+   - Search by file name (or configured column)
+   - Include or exclude specific tags/backlinks using the dropdowns
+   - Click any tag in the table to instantly filter by it
+5. (Optional) Click **"Show Config"** to edit the JSON configuration and tailor the view to your database schema.
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+## Configuration
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+The viewer is highly configurable via a JSON object. Click **"Show Config"** in the app to edit it live.
 
-### `npm run eject`
+Key configuration options:
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+| Field                  | Description |
+|------------------------|-----------|
+| `mainQuery`            | Primary SQL query to fetch table rows |
+| `queries`              | Named queries to populate filter dropdowns (e.g., all tags) |
+| `textSearchColumn`     | Column to enable free-text search on |
+| `taggableColumns`      | Columns rendered as clickable colored tags |
+| `columns`              | Define visible columns, types, and formatting |
+| `defaultSortField` / `defaultSortDir` | Initial table sorting |
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+See the default config in `src/App.jsx` for full documentation.
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+## Tech Stack
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+- [React](https://reactjs.org/)
+- [sql.js](https://sql.js.org/) – SQLite compiled to WebAssembly
+- [Tabulator](https://tabulator.info/) – Powerful interactive table library
+- [react-select](https://react-select.com/) – Accessible multi-select component
 
-## Learn More
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+## Acknowledgments
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+- [sql.js](https://github.com/sql-js/sql.js) by @sql-js
+- [Tabulator](https://tabulator.info/) by Oli Warner
+- Inspired by tools like Obsidian + DataView for personal data visualization
 
-### Code Splitting
+---
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
-
-### Analyzing the Bundle Size
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
-
-### Making a Progressive Web App
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+**Simple. Local. Powerful.** — Explore your SQLite data with ease.
