@@ -137,8 +137,9 @@ function App() {
     const process = async () => {
       try {
         const SQL = await initSqlJs({
-          locateFile: () =>
-            REACT_APP_URL ? `${REACT_APP_URL}/sql-wasm.wasm` : "/sql-wasm.wasm",
+	locateFile: () => "sql-wasm.wasm",
+		//locateFile: () =>
+		//REACT_APP_URL ? `${REACT_APP_URL}/sql-wasm.wasm` : "/sql-wasm.wasm",
         });
         const db = new SQL.Database(new Uint8Array(dbBuffer));
 
